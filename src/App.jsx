@@ -5,6 +5,8 @@ import WizardModal from './components/WizardModal'
 import EquipoCard from './components/EquipoCard'
 import LaptopCarousel from './components/LaptopCarousel'
 
+import { useGeolocalizacion } from './components/GeolocalizacionProvider'
+
 // Letras animadas para el título
 function AnimatedTitle({ text }) {
   return (
@@ -34,7 +36,7 @@ const STEPS_PREVIEW = [
   { num: 1, icon: '🎯', title: 'Tipo de uso',     desc: 'Dinos para qué usarás el equipo' },
   { num: 2, icon: '🖥️', title: 'Tipo de equipo',  desc: 'Laptop, PC o ambas opciones' },
   { num: 3, icon: '💰', title: 'Tu presupuesto',   desc: 'Define cuánto quieres invertir' },
-  { num: 4, icon: '📍', title: 'Tu ubicación',     desc: 'Opcional — filtra por ciudad' },
+  { num: 4, icon: '📍', title: 'Tu ubicación',     desc: 'Detecta por GPS o escribe tu ciudad' },
 ]
 
 export default function App() {
@@ -44,6 +46,8 @@ export default function App() {
   const [error, setError]             = useState(null)
   const [activeStep, setActiveStep]   = useState(null)
   const [scrolled, setScrolled]       = useState(false)
+
+  const { ubicacion, tieneUbicacion, origen } = useGeolocalizacion()
 
   // Navbar transparente sobre el video, sólida al bajar
   useEffect(() => {
@@ -98,13 +102,26 @@ export default function App() {
               <div className="navbar-tagline">Powered by scikit-learn + Gemini</div>
             </div>
           </a>
-          <button
-            id="btn-abrir-buscador"
-            className="btn btn-primary btn-sm"
-            onClick={() => handleOpenModal()}
-          >
-            ✨ Buscar laptop
-          </button>
+
+          <div className="navbar-actions">
+            <button
+              type="button"
+              className="navbar-location-btn"
+              onClick={() => handleOpenModal(3)}
+              title={tieneUbicacion ? `Ubicación: ${ubicacion.ciudad} (${origen})` : 'Configurar ubicación'}
+            >
+              <span className={`navbar-location-dot ${tieneUbicacion ? 'active' : ''}`} />
+              📍 {tieneUbicacion ? ubicacion.ciudad : 'Ubicación'}
+            </button>
+
+            <button
+              id="btn-abrir-buscador"
+              className="btn btn-primary btn-sm"
+              onClick={() => handleOpenModal(0)}
+            >
+              ✨ Buscar laptop
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -216,11 +233,21 @@ export default function App() {
                   ? `${resultados.total} equipo${resultados.total !== 1 ? 's' : ''} encontrado${resultados.total !== 1 ? 's' : ''} · Presupuesto S/. ${Number(resultados.presupuesto).toLocaleString('es-PE')}`
                   : 'Sin resultados — intenta ampliar el presupuesto o cambiar el tipo de equipo'}
               </p>
+
+              {tieneUbicacion && (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <div className="location-results-pill">
+                    <span>📍 Disponibilidad en <strong>{ubicacion.ciudad}{ubicacion.departamento ? `, ${ubicacion.departamento}` : ''}</strong></span>
+                    <button type="button" onClick={() => handleOpenModal(3)} className="location-pill-btn">Cambiar</button>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
                 <button
                   id="btn-nueva-busqueda"
                   className="btn btn-primary"
-                  onClick={() => handleOpenModal()}
+                  onClick={() => handleOpenModal(0)}
                 >
                   ✨ Nueva búsqueda
                 </button>
@@ -242,7 +269,7 @@ export default function App() {
                 <div className="empty-icon">🔍</div>
                 <h3>Sin resultados</h3>
                 <p>No encontramos equipos con esos criterios. Aumenta el presupuesto o elige "Ambos" en tipo de equipo.</p>
-                <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => handleOpenModal()}>
+                <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => handleOpenModal(0)}>
                   Intentar de nuevo
                 </button>
               </div>
@@ -279,6 +306,7 @@ export default function App() {
           onClose={() => setShowModal(false)}
           onSubmit={handleSubmit}
           loading={loading}
+          initialStep={activeStep ?? 0}
         />
       )}
     </>

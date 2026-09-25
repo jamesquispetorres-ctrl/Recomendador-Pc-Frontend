@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useGeolocalizacion } from './GeolocalizacionProvider'
+import { CIUDADES_POPULARES } from '../store/ubicacionStore'
 
 const TIPOS_USO = [
   { value: 'gaming',       label: 'Gaming',       emoji: '🎮', desc: 'Juegos y alto rendimiento' },
@@ -30,17 +31,38 @@ const STEPS_META = [
   { label: 'Tipo de uso',    title: '¿Para qué usarás tu laptop?',     subtitle: 'Elige el perfil que mejor describe tu uso principal.' },
   { label: 'Tipo de equipo', title: '¿Qué tipo de equipo prefieres?',   subtitle: 'Selecciona si buscas laptop, PC de escritorio o ambos.' },
   { label: 'Presupuesto',    title: '¿Cuál es tu presupuesto?',         subtitle: 'Ingresa o elige un monto en soles peruanos (S/.).' },
-  { label: 'Ubicación',      title: '¿Dónde estás ubicado?',            subtitle: 'Opcional — te ayudamos a encontrar equipos en tu zona.' },
+  { label: 'Ubicación',      title: '¿Dónde estás ubicado?',            subtitle: 'Detecta tu ubicación por GPS o ingrésala manualmente.' },
 ]
 
-export default function WizardModal({ onClose, onSubmit, loading }) {
-  const [step, setStep] = useState(0)
+export default function WizardModal({ onClose, onSubmit, loading, initialStep = 0 }) {
+  const [step, setStep] = useState(initialStep)
   const [tipoUso, setTipoUso]       = useState('')
   const [tipoEquipo, setTipoEquipo] = useState('ambos')
   const [presupuesto, setPresupuesto] = useState('')
   const [conExplicacion, setConExplicacion] = useState(false)
 
-  const { solicitar, ubicacion, cargando: geoCargando, error: geoError, tieneUbicacion } = useGeolocalizacion()
+  // Estado del paso de ubicación
+  const [modoUbicacion, setModoUbicacion] = useState('auto') // 'auto' | 'manual'
+  const [ciudadInput, setCiudadInput]     = useState('')
+  const [depInput, setDepInput]           = useState('')
+
+  const {
+    solicitarAutomatica,
+    establecerManual,
+    limpiarUbicacion,
+    ubicacion,
+    origen,
+    cargando: geoCargando,
+    error: geoError,
+    tieneUbicacion,
+  } = useGeolocalizacion()
+
+  // Sincronizar inputs si ya existe ubicación guardada
+  useEffect(() => {
+    if (ubicacion.ciudad) setCiudadInput(ubicacion.ciudad)
+    if (ubicacion.departamento) setDepInput(ubicacion.departamento)
+    if (origen === 'manual') setModoUbicacion('manual')
+  }, [ubicacion, origen])
 
   // Cerrar con Escape
   useEffect(() => {
@@ -50,23 +72,50 @@ export default function WizardModal({ onClose, onSubmit, loading }) {
   }, [onClose])
 
   const canNext = () => {
-    if (step === 0) return !!tipoUso
-    if (step === 1) return !!tipoEquipo
-    if (step === 2) return !!presupuesto && Number(presupuesto) > 0
+    if (step === 0) return Boolean(tipoUso)
+    if (step === 1) return Boolean(tipoEquipo)
+    if (step === 2) return Boolean(presupuesto && Number(presupuesto) > 0)
     return true // paso 4 (ubicación) es opcional
   }
 
   const handleNext = () => {
-    if (step < TOTAL_STEPS - 1) setStep((s) => s + 1)
-    else handleSubmit()
+    if (step < TOTAL_STEPS - 1) {
+      setStep((s) => s + 1)
+    } else {
+      handleSubmit()
+    }
+  }
+
+  const handleSeleccionarCiudadRapida = (item) => {
+    setCiudadInput(item.ciudad)
+    setDepInput(item.departamento)
+    establecerManual(item.ciudad, item.departamento)
+  }
+
+  const handleGuardarManual = (e) => {
+    e?.preventDefault()
+    if (ciudadInput.trim()) {
+      establecerManual(ciudadInput, depInput || ciudadInput)
+    }
   }
 
   const handleSubmit = () => {
+    // Si el usuario escribió en el input manual pero no hizo clic en guardar, guardarlo
+    if (modoUbicacion === 'manual' && ciudadInput.trim() && !tieneUbicacion) {
+      establecerManual(ciudadInput, depInput || ciudadInput)
+    }
+
+    const payloadUbicacion = tieneUbicacion
+      ? { ciudad: ubicacion.ciudad, departamento: ubicacion.departamento }
+      : ciudadInput.trim()
+        ? { ciudad: ciudadInput.trim(), departamento: depInput.trim() || ciudadInput.trim() }
+        : null
+
     onSubmit({
       presupuesto: Number(presupuesto),
       tipo_uso: tipoUso,
       tipo_equipo: tipoEquipo,
-      ubicacion: tieneUbicacion ? { ciudad: ubicacion.ciudad, departamento: ubicacion.departamento } : null,
+      ubicacion: payloadUbicacion,
       con_explicacion: conExplicacion,
     })
   }
@@ -109,7 +158,7 @@ export default function WizardModal({ onClose, onSubmit, loading }) {
               >
                 <span className="chip-emoji">{t.emoji}</span>
                 <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{t.label}</span>
-                <span style={{ fontSize: '0.7rem', color: '#475569' }}>{t.desc}</span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{t.desc}</span>
               </div>
             ))}
           </div>
@@ -195,33 +244,155 @@ export default function WizardModal({ onClose, onSubmit, loading }) {
                 <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#e2e8f0' }}>
                   🤖 Explicaciones con Gemini AI
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px' }}>
-                  Genera una explicación personalizada por cada equipo recomendado
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                  Genera una justificación técnica personalizada en lenguaje simple
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ── PASO 4: Ubicación ── */}
+        {/* ── PASO 4: Ubicación (Automática o Manual) ── */}
         {step === 3 && (
-          <div>
-            <button className="geo-btn" onClick={solicitar} disabled={geoCargando}>
-              {geoCargando ? '⏳ Detectando...' : '📍 Detectar mi ubicación automáticamente'}
-            </button>
+          <div className="geo-step-container">
+            {/* Pestañas de modo */}
+            <div className="geo-tabs">
+              <button
+                type="button"
+                className={`geo-tab ${modoUbicacion === 'auto' ? 'active' : ''}`}
+                onClick={() => setModoUbicacion('auto')}
+              >
+                🛰️ Detectar automática (GPS)
+              </button>
+              <button
+                type="button"
+                className={`geo-tab ${modoUbicacion === 'manual' ? 'active' : ''}`}
+                onClick={() => setModoUbicacion('manual')}
+              >
+                ✍️ Insertar ubicación manual
+              </button>
+            </div>
 
-            {tieneUbicacion && (
-              <div className="geo-result">
-                ✅ {ubicacion.ciudad}, {ubicacion.departamento}
+            {/* OPCIÓN 1: Automática */}
+            {modoUbicacion === 'auto' && (
+              <div className="geo-box-content fade-in">
+                <button
+                  type="button"
+                  className="geo-btn-cta"
+                  onClick={solicitarAutomatica}
+                  disabled={geoCargando}
+                >
+                  {geoCargando ? (
+                    <>
+                      <div className="spinner" style={{ width: 18, height: 18 }} />
+                      Consultando satélite / GPS...
+                    </>
+                  ) : (
+                    <>📍 Detectar mi ubicación por GPS</>
+                  )}
+                </button>
+                <p className="geo-help-text">
+                  Usamos la geolocalización segura de tu navegador y OpenStreetMap para ubicar tu ciudad.
+                </p>
               </div>
             )}
+
+            {/* OPCIÓN 2: Manual */}
+            {modoUbicacion === 'manual' && (
+              <div className="geo-box-content fade-in">
+                <form onSubmit={handleGuardarManual} className="geo-manual-form">
+                  <div className="geo-inputs-grid">
+                    <div>
+                      <label className="geo-label" htmlFor="geo-ciudad-input">Ciudad *</label>
+                      <input
+                        id="geo-ciudad-input"
+                        type="text"
+                        className="geo-input"
+                        placeholder="Ej: Lima, Arequipa, Cusco"
+                        value={ciudadInput}
+                        onChange={(e) => {
+                          setCiudadInput(e.target.value)
+                          if (e.target.value.trim()) {
+                            establecerManual(e.target.value, depInput || e.target.value)
+                          }
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="geo-label" htmlFor="geo-dep-input">Departamento / Región</label>
+                      <input
+                        id="geo-dep-input"
+                        type="text"
+                        className="geo-input"
+                        placeholder="Ej: Lima, Arequipa, La Libertad"
+                        value={depInput}
+                        onChange={(e) => {
+                          setDepInput(e.target.value)
+                          if (ciudadInput.trim()) {
+                            establecerManual(ciudadInput, e.target.value || ciudadInput)
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ciudades frecuentes para selección rápida con 1 clic */}
+                  <div className="quick-cities-wrap">
+                    <span className="quick-cities-title">Ciudades frecuentes:</span>
+                    <div className="quick-cities-chips">
+                      {CIUDADES_POPULARES.map((item) => (
+                        <button
+                          key={item.ciudad}
+                          type="button"
+                          className={`quick-city-chip ${ciudadInput.toLowerCase() === item.ciudad.toLowerCase() ? 'active' : ''}`}
+                          onClick={() => handleSeleccionarCiudadRapida(item)}
+                        >
+                          {item.ciudad}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Card de ubicación actualmente activa */}
+            {tieneUbicacion && (
+              <div className="geo-active-card fade-up">
+                <div className="geo-active-icon">📍</div>
+                <div className="geo-active-info">
+                  <div className="geo-active-title">
+                    {ubicacion.ciudad}{ubicacion.departamento ? `, ${ubicacion.departamento}` : ''}
+                  </div>
+                  <span className={`geo-badge ${origen === 'automatica' ? 'badge-auto' : 'badge-manual'}`}>
+                    {origen === 'automatica' ? '🛰️ Detectada por GPS' : '✍️ Ingresada manualmente'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="geo-active-clear"
+                  onClick={() => {
+                    limpiarUbicacion()
+                    setCiudadInput('')
+                    setDepInput('')
+                  }}
+                  title="Quitar ubicación"
+                >
+                  ✕ Quitar
+                </button>
+              </div>
+            )}
+
+            {/* Alerta de error si ocurrió */}
             {geoError && (
-              <div style={{ marginTop: '8px', fontSize: '0.8rem', color: '#fca5a5' }}>
+              <div className="geo-error-box">
                 ⚠️ {geoError}
               </div>
             )}
-            <p style={{ fontSize: '0.8rem', color: '#475569', marginTop: '12px', lineHeight: 1.5 }}>
-              Usamos la API gratuita de OpenStreetMap. Puedes saltar este paso — la ubicación es opcional.
+
+            <p className="geo-footnote">
+              💡 La ubicación es <strong>opcional</strong>. Si la configuras, priorizamos tiendas físicas y tiempos de entrega en tu localidad.
             </p>
           </div>
         )}

@@ -1,16 +1,22 @@
 /**
  * ubicacionStore.js — Estado global de ubicación del usuario.
  *
- * Usa Zustand para almacenar la ciudad y departamento detectados
- * por geolocalización del navegador + geocodificación inversa.
- *
- * Uso:
- *   import { useUbicacionStore } from '@/store/ubicacionStore'
- *
- *   const { ciudad, departamento, setUbicacion, limpiarUbicacion } = useUbicacionStore()
+ * Permite tanto la detección automática vía GPS / navegador (OpenStreetMap)
+ * como la inserción manual de ciudad y departamento.
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+
+export const CIUDADES_POPULARES = [
+  { ciudad: 'Lima', departamento: 'Lima' },
+  { ciudad: 'Arequipa', departamento: 'Arequipa' },
+  { ciudad: 'Trujillo', departamento: 'La Libertad' },
+  { ciudad: 'Chiclayo', departamento: 'Lambayeque' },
+  { ciudad: 'Piura', departamento: 'Piura' },
+  { ciudad: 'Cusco', departamento: 'Cusco' },
+  { ciudad: 'Huancayo', departamento: 'Junín' },
+  { ciudad: 'Tacna', departamento: 'Tacna' },
+]
 
 export const useUbicacionStore = create(
   persist(
@@ -20,21 +26,48 @@ export const useUbicacionStore = create(
       departamento: '',
       lat: null,
       lng: null,
+      origen: null, // 'automatica' | 'manual' | null
       cargando: false,
       error: null,
 
       // ── Acciones ──────────────────────────────────────────────────────────
 
       /**
-       * Guarda la ubicación completa detectada por geolocalización.
-       * @param {{ ciudad: string, departamento: string, lat: number, lng: number }} ubicacion
+       * Guarda la ubicación detectada automáticamente por GPS.
        */
+      setUbicacionAutomatica: ({ ciudad, departamento, lat, lng }) =>
+        set({
+          ciudad: ciudad?.trim() || '',
+          departamento: departamento?.trim() || '',
+          lat: lat ?? null,
+          lng: lng ?? null,
+          origen: 'automatica',
+          error: null,
+          cargando: false,
+        }),
+
+      /**
+       * Guarda la ubicación ingresada manualmente por el usuario.
+       */
+      setUbicacionManual: ({ ciudad, departamento }) =>
+        set({
+          ciudad: ciudad?.trim() || '',
+          departamento: departamento?.trim() || '',
+          lat: null,
+          lng: null,
+          origen: 'manual',
+          error: null,
+          cargando: false,
+        }),
+
+      // Compatibilidad con código previo
       setUbicacion: ({ ciudad, departamento, lat, lng }) =>
         set({
-          ciudad,
-          departamento,
-          lat,
-          lng,
+          ciudad: ciudad?.trim() || '',
+          departamento: departamento?.trim() || '',
+          lat: lat ?? null,
+          lng: lng ?? null,
+          origen: 'automatica',
           error: null,
           cargando: false,
         }),
@@ -49,17 +82,19 @@ export const useUbicacionStore = create(
           departamento: '',
           lat: null,
           lng: null,
+          origen: null,
           error: null,
           cargando: false,
         }),
     }),
     {
-      name: 'ubicacion-storage',   // Clave en localStorage
-      partialize: (state) => ({    // Solo persistir datos, no estado de UI
+      name: 'ubicacion-storage',
+      partialize: (state) => ({
         ciudad: state.ciudad,
         departamento: state.departamento,
         lat: state.lat,
         lng: state.lng,
+        origen: state.origen,
       }),
     }
   )
