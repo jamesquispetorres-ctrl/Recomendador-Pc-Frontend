@@ -5,8 +5,6 @@ import WizardModal from './components/WizardModal'
 import EquipoCard from './components/EquipoCard'
 import LaptopCarousel from './components/LaptopCarousel'
 
-import { useGeolocalizacion } from './components/GeolocalizacionProvider'
-
 // Letras animadas para el título
 function AnimatedTitle({ text }) {
   return (
@@ -33,10 +31,9 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 }))
 
 const STEPS_PREVIEW = [
-  { num: 1, icon: '🎯', title: 'Tipo de uso',     desc: 'Dinos para qué usarás el equipo' },
-  { num: 2, icon: '🖥️', title: 'Tipo de equipo',  desc: 'Laptop, PC o ambas opciones' },
-  { num: 3, icon: '💰', title: 'Tu presupuesto',   desc: 'Define cuánto quieres invertir' },
-  { num: 4, icon: '📍', title: 'Tu ubicación',     desc: 'Detecta por GPS o escribe tu ciudad' },
+  { num: 1, icon: '🎯', title: 'Tipo de uso',     desc: 'Gaming, trabajo, desarrollo o estudio' },
+  { num: 2, icon: '🖥️', title: 'Tipo de equipo',  desc: 'Laptop portátil, PC de escritorio o ambos' },
+  { num: 3, icon: '💰', title: 'Tu presupuesto',   desc: 'Búsqueda en Mercado Libre y análisis con Gemini AI' },
 ]
 
 export default function App() {
@@ -46,8 +43,6 @@ export default function App() {
   const [error, setError]             = useState(null)
   const [activeStep, setActiveStep]   = useState(null)
   const [scrolled, setScrolled]       = useState(false)
-
-  const { ubicacion, tieneUbicacion, origen } = useGeolocalizacion()
 
   // Navbar transparente sobre el video, sólida al bajar
   useEffect(() => {
@@ -72,7 +67,11 @@ export default function App() {
     setLoading(true)
     setError(null)
     try {
-      const data = await getRecomendaciones(params)
+      // Parámetros directos a la API con Mercado Libre y Gemini activado
+      const data = await getRecomendaciones({
+        ...params,
+        con_explicacion: true,
+      })
       setResultados(data)
       setShowModal(false)
       // Scroll suave a resultados
@@ -83,7 +82,7 @@ export default function App() {
       setError(
         err?.response?.data?.errores
           ? Object.values(err.response.data.errores).join(' · ')
-          : 'No se pudo conectar con el servidor. ¿Está corriendo el backend?'
+          : 'No se pudo conectar con el backend de recomendaciones. Por favor verifica que el servidor esté activo.'
       )
     } finally {
       setLoading(false)
@@ -99,27 +98,23 @@ export default function App() {
             <img src="/assets/panda_logo.jpg" alt="LaptopAI Logo" className="navbar-logo" />
             <div>
               <div>LaptopAI <span className="text-gradient">Recomendador</span></div>
-              <div className="navbar-tagline">Powered by scikit-learn + Gemini</div>
+              <div className="navbar-tagline">Mercado Libre Perú · Google Gemini AI</div>
             </div>
           </a>
 
           <div className="navbar-actions">
-            <button
-              type="button"
-              className="navbar-location-btn"
-              onClick={() => handleOpenModal(3)}
-              title={tieneUbicacion ? `Ubicación: ${ubicacion.ciudad} (${origen})` : 'Configurar ubicación'}
-            >
-              <span className={`navbar-location-dot ${tieneUbicacion ? 'active' : ''}`} />
-              📍 {tieneUbicacion ? ubicacion.ciudad : 'Ubicación'}
-            </button>
+            {/* Badge de Mercado Libre Perú API */}
+            <div className="navbar-ml-status" title="Conectado a la API oficial de Mercado Libre Perú">
+              <span className="navbar-ml-dot" />
+              <span>🟡 Mercado Libre Perú (MPE)</span>
+            </div>
 
             <button
               id="btn-abrir-buscador"
               className="btn btn-primary btn-sm"
               onClick={() => handleOpenModal(0)}
             >
-              ✨ Buscar laptop
+              ✨ Buscar en Mercado Libre
             </button>
           </div>
         </div>
@@ -130,7 +125,6 @@ export default function App() {
 
         {/* ── Fondo animado Ken Burns (simula video) ── */}
         <div className="hero-video hero-bg-kenburns" />
-
 
         {/* ── Overlay oscuro degradado ── */}
         <div className="hero-video-overlay" />
@@ -151,32 +145,33 @@ export default function App() {
           <div className="container">
 
             <div className="hero-eyebrow">
-              🤖 Inteligencia Artificial · scikit-learn · Google Gemini
+              🟡 API Mercado Libre Perú · scikit-learn · 🤖 Google Gemini AI
             </div>
 
             <h1>
-              <AnimatedTitle text="Encuentra tu laptop con IA" />
+              <AnimatedTitle text="Encuentra tu laptop en Mercado Libre con IA" />
             </h1>
 
             <p className="hero-subtitle">
-              Responde 4 preguntas rápidas y nuestro motor de IA analiza
-              cientos de equipos para encontrar los mejores dentro de tu presupuesto en <strong>soles peruanos</strong>.
+              Responde 3 preguntas rápidas y nuestro motor de IA busca en el catálogo de
+              <strong> Mercado Libre Perú</strong> los mejores equipos dentro de tu presupuesto en
+              <strong> Soles (S/.)</strong>, con explicaciones automáticas generadas por <strong>Gemini AI</strong>.
             </p>
 
             <div className="hero-cta" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 id="btn-hero-buscar"
                 className="btn btn-primary btn-lg"
-                onClick={() => handleOpenModal()}
+                onClick={() => handleOpenModal(0)}
               >
-                ✨ Comenzar búsqueda
+                🚀 Comenzar búsqueda
               </button>
               {resultados && (
                 <button
                   className="btn btn-ghost btn-lg"
                   onClick={() => document.getElementById('resultados')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  Ver resultados ↓
+                  Ver recomendaciones ↓
                 </button>
               )}
             </div>
@@ -197,11 +192,11 @@ export default function App() {
       <section className="steps-section">
         <div className="container">
           <div className="steps-header">
-            <h2>¿Cómo funciona? <span className="text-gradient">4 pasos simples</span></h2>
-            <p>Nuestro asistente te guía paso a paso para encontrar el equipo ideal</p>
+            <h2>¿Cómo funciona? <span className="text-gradient">3 pasos simples</span></h2>
+            <p>Búsqueda inteligente directa en Mercado Libre con explicación personalizada de Gemini AI</p>
           </div>
 
-          <div className="steps-grid">
+          <div className="steps-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
             {STEPS_PREVIEW.map((s) => (
               <div
                 key={s.num}
@@ -226,7 +221,7 @@ export default function App() {
           <div className="container">
             <div className="results-header">
               <h2>
-                🎯 Recomendaciones <span className="text-gradient">para ti</span>
+                🎯 Recomendaciones en <span className="text-gradient">Mercado Libre Perú</span>
               </h2>
               <p>
                 {resultados.total > 0
@@ -234,16 +229,17 @@ export default function App() {
                   : 'Sin resultados — intenta ampliar el presupuesto o cambiar el tipo de equipo'}
               </p>
 
-              {tieneUbicacion && (
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <div className="location-results-pill">
-                    <span>📍 Disponibilidad en <strong>{ubicacion.ciudad}{ubicacion.departamento ? `, ${ubicacion.departamento}` : ''}</strong></span>
-                    <button type="button" onClick={() => handleOpenModal(3)} className="location-pill-btn">Cambiar</button>
-                  </div>
+              {/* Tag descriptivo de integración */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                <div className="results-ml-banner">
+                  <span className="ml-dot-ping" />
+                  <span>
+                    🟡 Catálogo sincronizado con <strong>Mercado Libre Perú</strong> · Explicaciones con <strong>Google Gemini AI</strong> incluidas
+                  </span>
                 </div>
-              )}
+              </div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
                 <button
                   id="btn-nueva-busqueda"
                   className="btn btn-primary"
@@ -268,7 +264,7 @@ export default function App() {
               <div className="empty-state">
                 <div className="empty-icon">🔍</div>
                 <h3>Sin resultados</h3>
-                <p>No encontramos equipos con esos criterios. Aumenta el presupuesto o elige "Ambos" en tipo de equipo.</p>
+                <p>No encontramos equipos en Mercado Libre con ese presupuesto exacto. Prueba aumentando el rango o seleccionando "Ambos".</p>
                 <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => handleOpenModal(0)}>
                   Intentar de nuevo
                 </button>
@@ -293,9 +289,11 @@ export default function App() {
               LaptopAI Recomendador
             </span>
           </div>
-          <p>Precios en <strong>Soles Peruanos (S/.)</strong> · Motor ML con scikit-learn · Explicaciones con Google Gemini</p>
+          <p>
+            Catálogo y precios en <strong>Soles (S/.)</strong> vía <strong>Mercado Libre Perú (MPE)</strong> · Motor ML scikit-learn · Explicaciones generadas por <strong>Google Gemini AI</strong>
+          </p>
           <p style={{ marginTop: '4px', fontSize: '0.75rem' }}>
-            API: <a href="http://localhost:8000/api/" target="_blank" rel="noopener noreferrer">localhost:8000/api/</a>
+            API Backend: <a href="http://localhost:8000/api/" target="_blank" rel="noopener noreferrer">localhost:8000/api/</a>
           </p>
         </div>
       </footer>
