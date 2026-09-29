@@ -40,10 +40,7 @@ export default function EquipoCard({ equipo, index }) {
       ? equipo.enlace_compra
       : `https://listado.mercadolibre.com.pe/${slug}`
 
-  const handleOpenML = (e) => {
-    e.preventDefault()
-    window.open(enlaceML, '_blank', 'noopener,noreferrer')
-  }
+
 
   return (
     <div
@@ -153,7 +150,6 @@ export default function EquipoCard({ equipo, index }) {
         <div className="equipo-footer">
           <a
             href={enlaceML}
-            onClick={handleOpenML}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-mercadolibre"
