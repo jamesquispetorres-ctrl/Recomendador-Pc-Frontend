@@ -33,10 +33,7 @@ export default function EquipoCard({ equipo, index }) {
     .replace(/^-|-$/g, '')
 
   const enlaceML =
-    equipo.enlace_compra &&
-    equipo.enlace_compra.startsWith('http') &&
-    !equipo.enlace_compra.includes('MPE-') &&
-    !equipo.enlace_compra.includes('articulo.mercadolibre')
+    equipo.enlace_compra && equipo.enlace_compra.startsWith('http')
       ? equipo.enlace_compra
       : `https://listado.mercadolibre.com.pe/${slug}`
 
