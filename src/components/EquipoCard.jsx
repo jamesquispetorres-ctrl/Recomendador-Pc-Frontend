@@ -48,7 +48,7 @@ export default function EquipoCard({ equipo, index }) {
             <span className="store-icon">🏬</span>
             <span className="store-name">{equipo.tienda || 'Google Shopping'}</span>
           </div>
-          <span className="equipo-location">📍 {equipo.ciudad || 'Perú'}</span>
+          <span className="equipo-location">📍 {equipo.ciudad || 'Online'}</span>
         </div>
 
         {/* ── TÍTULO / NOMBRE DEL PRODUCTO ── */}

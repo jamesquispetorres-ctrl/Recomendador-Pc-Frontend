@@ -18,9 +18,9 @@ const TIPOS_EQUIPO = [
 const ACCIONES_STEP3 = [
   {
     value: 'buscar',
-    label: 'Buscar equipos en tiendas de Perú',
+    label: 'Buscar equipos',
     emoji: '🔍',
-    desc: 'Explora ofertas en tiempo real de Google Shopping y tiendas verificadas de Perú.',
+    desc: 'Explora ofertas en tiempo real y tiendas verificadas.',
     color: '#38bdf8',
     gradient: 'linear-gradient(135deg, rgba(56,189,248,0.15), rgba(99,102,241,0.10))',
     border: 'rgba(56,189,248,0.4)',
@@ -61,7 +61,7 @@ const STEPS_META = [
   {
     label: 'Acción y presupuesto',
     title: 'Configura tu búsqueda',
-    subtitle: 'Selecciona cómo quieres buscar en las tiendas reales de Perú.',
+    subtitle: 'Selecciona cómo quieres buscar en las tiendas reales.',
   },
 ]
 
@@ -251,7 +251,7 @@ export default function WizardModal({ onClose, onSubmit, loading, initialStep = 
             ) : step === TOTAL_STEPS - 1 ? (
               accion === 'comparar'
                 ? <>⚖️ Ver Comparación</>
-                : <>🚀 Buscar Equipos en Perú</>
+                : <>🚀 Buscar Equipos</>
             ) : (
               <>Siguiente →</>
             )}

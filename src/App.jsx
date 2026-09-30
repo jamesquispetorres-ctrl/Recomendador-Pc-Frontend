@@ -34,7 +34,7 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 const STEPS_PREVIEW = [
   { num: 1, icon: '🎯', title: 'Tipo de uso',    desc: 'Gaming, trabajo, desarrollo o estudio' },
   { num: 2, icon: '🖥️', title: 'Tipo de equipo', desc: 'Laptop portátil, PC de escritorio o ambos' },
-  { num: 3, icon: '🛒', title: 'Buscar & Comparar', desc: 'Precios reales y tiendas verificadas de Perú' },
+  { num: 3, icon: '🛒', title: 'Buscar & Comparar', desc: 'Precios reales y tiendas verificadas' },
 ]
 
 export default function App() {
@@ -113,9 +113,9 @@ export default function App() {
           </a>
 
           <div className="navbar-actions">
-            <div className="navbar-status-badge" title="Conectado a la API de Google Shopping vía SerpApi Perú">
+            <div className="navbar-status-badge" title="Conectado a la API de Google Shopping">
               <span className="navbar-dot-ping" />
-              <span>🛍️ Google Shopping (Perú)</span>
+              <span>🛍️ Google Shopping API</span>
             </div>
 
             <button
@@ -147,7 +147,7 @@ export default function App() {
         <div className="hero-content">
           <div className="container">
             <div className="hero-eyebrow">
-              🇵🇪 Google Shopping API · SerpApi Perú · Tiendas Oficiales
+              ⚡ Google Shopping API · Gemini IA · Tiendas Oficiales
             </div>
 
             <h1>
@@ -191,7 +191,7 @@ export default function App() {
         <div className="container">
           <div className="steps-header">
             <h2>¿Cómo funciona? <span className="text-gradient">3 pasos simples</span></h2>
-            <p>Búsqueda directa en tiendas de Perú a través de Google Shopping API</p>
+            <p>Búsqueda directa en tiendas a través de Google Shopping API</p>
           </div>
 
           <div className="steps-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
@@ -220,8 +220,8 @@ export default function App() {
             <div className="results-header">
               <h2>
                 {modo === 'comparar'
-                  ? <>⚖️ Comparativa de <span className="text-gradient">Precios y Tiendas en Perú</span></>
-                  : <>🎯 Catálogo de <span className="text-gradient">Google Shopping Perú</span></>
+                  ? <>⚖️ Comparativa de <span className="text-gradient">Precios y Tiendas</span></>
+                  : <>🎯 Catálogo de <span className="text-gradient">Equipos Recomendados</span></>
                 }
               </h2>
               <p>
@@ -234,7 +234,7 @@ export default function App() {
                 <div className="results-banner">
                   <span className="dot-ping" />
                   <span>
-                    🛍️ Datos en vivo de <strong>Google Shopping Perú</strong> · Enlaces reales a la tienda de compra
+                    🛍️ Datos en tiempo real · Enlaces directos a la tienda de compra
                   </span>
                 </div>
               </div>
@@ -301,7 +301,7 @@ export default function App() {
             </span>
           </div>
           <p>
-            Catálogo y precios en <strong>Soles (S/.)</strong> obtenidos en tiempo real vía <strong>Google Shopping API (SerpApi Perú)</strong>
+            Catálogo y precios en <strong>Dólares (USD)</strong> obtenidos en tiempo real vía <strong>Google Shopping API</strong>
           </p>
           <p style={{ marginTop: '4px', fontSize: '0.75rem' }}>
             API Backend: <a href="http://localhost:8000/api/" target="_blank" rel="noopener noreferrer">localhost:8000/api/</a>

@@ -16,7 +16,7 @@ export default function ComparadorModal({ equipos, onClose }) {
     { label: 'Tarjeta Gráfica',icon: '🎮',get: (eq) => eq.tarjeta_grafica || 'Integrada' },
     { label: 'Pantalla',      icon: '🖥️', get: (eq) => eq.tamanio_pantalla ? `${eq.tamanio_pantalla}"` : 'N/D' },
     { label: 'Beneficio',     icon: '📈', get: (eq) => `${getBeneficio(eq)}%` },
-    { label: 'Tienda',        icon: '🏪', get: (eq) => eq.tienda || 'Mercado Libre Perú' },
+    { label: 'Tienda',        icon: '🏪', get: (eq) => eq.tienda || 'Tienda Verificada' },
   ]
 
   // Colores para destacar el mejor valor
@@ -57,7 +57,7 @@ export default function ComparadorModal({ equipos, onClose }) {
           <div>
             <h2 className="comparador-title">⚖️ Comparar Laptops</h2>
             <p className="comparador-subtitle">
-              {visibleEquipos.length} equipos · Mercado Libre Perú
+              {visibleEquipos.length} equipos para comparar
             </p>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Cerrar comparador">✕</button>
@@ -76,7 +76,7 @@ export default function ComparadorModal({ equipos, onClose }) {
                         {eq.marca} {eq.modelo?.split(' ').slice(0, 3).join(' ')}
                       </div>
                       <span className="badge-mercadolibre" style={{ fontSize: '0.65rem' }}>
-                        🟡 ML Perú
+                        🟡 Tienda Online
                       </span>
                     </div>
                   </th>
