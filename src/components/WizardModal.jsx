@@ -10,18 +10,39 @@ const TIPOS_USO = [
 ]
 
 const TIPOS_EQUIPO = [
-  { value: 'laptop',        label: 'Laptop',       emoji: '💻', desc: 'Portabilidad y trabajo en movimiento' },
+  { value: 'laptop',        label: 'Laptop',        emoji: '💻', desc: 'Portabilidad y trabajo en movimiento' },
   { value: 'pc_escritorio', label: 'PC Escritorio', emoji: '🖥️', desc: 'Máxima potencia y escalabilidad' },
-  { value: 'ambos',         label: 'Ambos',         emoji: '🔄', desc: 'Ver las mejores ofertas de ambos' },
+  { value: 'ambos',         label: 'Ambos',          emoji: '🔄', desc: 'Ver las mejores ofertas de ambos' },
+]
+
+const ACCIONES_STEP3 = [
+  {
+    value: 'buscar',
+    label: 'Buscar equipos en tiendas de Perú',
+    emoji: '🔍',
+    desc: 'Explora ofertas en tiempo real de Google Shopping y tiendas verificadas de Perú.',
+    color: '#38bdf8',
+    gradient: 'linear-gradient(135deg, rgba(56,189,248,0.15), rgba(99,102,241,0.10))',
+    border: 'rgba(56,189,248,0.4)',
+  },
+  {
+    value: 'comparar',
+    label: 'Comparar características y tiendas',
+    emoji: '⚖️',
+    desc: 'Compara lado a lado precios, especificaciones y tiendas para elegir la mejor opción.',
+    color: '#facc15',
+    gradient: 'linear-gradient(135deg, rgba(250,204,21,0.15), rgba(251,146,60,0.10))',
+    border: 'rgba(250,204,21,0.4)',
+  },
 ]
 
 const PRESUPUESTOS = [
-  { label: 'S/. 1,500', value: 1500 },
-  { label: 'S/. 2,500', value: 2500 },
-  { label: 'S/. 3,500', value: 3500 },
-  { label: 'S/. 4,500', value: 4500 },
-  { label: 'S/. 6,000', value: 6000 },
-  { label: 'S/. 8,000+', value: 8000 },
+  { label: '$500', value: 500 },
+  { label: '$1,000', value: 1000 },
+  { label: '$1,500', value: 1500 },
+  { label: '$2,000', value: 2000 },
+  { label: '$3,000', value: 3000 },
+  { label: '$5,000+', value: 5000 },
 ]
 
 const TOTAL_STEPS = 3
@@ -30,7 +51,7 @@ const STEPS_META = [
   {
     label: 'Tipo de uso',
     title: '¿Para qué usarás tu equipo?',
-    subtitle: 'Elige tu perfil de uso para calcular la afinidad y balance de hardware ideal.',
+    subtitle: 'Elige tu perfil de uso para filtrar los mejores componentes.',
   },
   {
     label: 'Tipo de equipo',
@@ -38,9 +59,9 @@ const STEPS_META = [
     subtitle: 'Elige entre laptop portátil, PC de escritorio o explorar ambas opciones.',
   },
   {
-    label: 'Presupuesto',
-    title: '¿Cuál es tu presupuesto en Soles?',
-    subtitle: 'Búsqueda directa en Mercado Libre Perú con análisis automático de Gemini AI.',
+    label: 'Acción y presupuesto',
+    title: 'Configura tu búsqueda',
+    subtitle: 'Selecciona cómo quieres buscar en las tiendas reales de Perú.',
   },
 ]
 
@@ -48,9 +69,9 @@ export default function WizardModal({ onClose, onSubmit, loading, initialStep = 
   const [step, setStep] = useState(Math.min(initialStep, TOTAL_STEPS - 1))
   const [tipoUso, setTipoUso]       = useState('')
   const [tipoEquipo, setTipoEquipo] = useState('ambos')
-  const [presupuesto, setPresupuesto] = useState('')
+  const [accion, setAccion]         = useState('buscar')
+  const [presupuesto, setPresupuesto] = useState('1500')
 
-  // Cerrar con Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
@@ -60,7 +81,7 @@ export default function WizardModal({ onClose, onSubmit, loading, initialStep = 
   const canNext = () => {
     if (step === 0) return Boolean(tipoUso)
     if (step === 1) return Boolean(tipoEquipo)
-    if (step === 2) return Boolean(presupuesto && Number(presupuesto) > 0)
+    if (step === 2) return Boolean(accion) && Boolean(presupuesto && Number(presupuesto) > 0)
     return true
   }
 
@@ -77,7 +98,7 @@ export default function WizardModal({ onClose, onSubmit, loading, initialStep = 
       presupuesto: Number(presupuesto),
       tipo_uso: tipoUso,
       tipo_equipo: tipoEquipo,
-      con_explicacion: true, // Gemini AI activado por defecto
+      accion: accion,
     })
   }
 
@@ -147,55 +168,64 @@ export default function WizardModal({ onClose, onSubmit, loading, initialStep = 
           </div>
         )}
 
-        {/* ── PASO 3: Presupuesto ── */}
+        {/* ── PASO 3: Acciones y Presupuesto ── */}
         {step === 2 && (
           <div>
-            <div className="price-input-wrap" style={{ marginBottom: '14px' }}>
-              <span className="price-prefix">S/.</span>
-              <input
-                id="presupuesto-input"
-                type="number"
-                min="100"
-                step="100"
-                className="price-input"
-                placeholder="Ej: 3500"
-                value={presupuesto}
-                onChange={(e) => setPresupuesto(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="price-chips">
-              {PRESUPUESTOS.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  className={`price-chip ${Number(presupuesto) === p.value ? 'active' : ''}`}
-                  onClick={() => setPresupuesto(p.value)}
+            <div className="wizard-acciones-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+              {ACCIONES_STEP3.map((a) => (
+                <div
+                  key={a.value}
+                  className={`wizard-accion-card ${accion === a.value ? 'active' : ''}`}
+                  onClick={() => setAccion(a.value)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setAccion(a.value)}
+                  style={{
+                    '--accion-color': a.color,
+                    '--accion-gradient': a.gradient,
+                    '--accion-border': a.border,
+                  }}
                 >
-                  {p.label}
-                </button>
+                  <div className="wizard-accion-icon">{a.emoji}</div>
+                  <div className="wizard-accion-label">{a.label}</div>
+                  <div className="wizard-accion-desc">{a.desc}</div>
+                  {accion === a.value && (
+                    <div className="wizard-accion-check">✓</div>
+                  )}
+                </div>
               ))}
             </div>
 
-            {/* Tarjeta de Garantía: Mercado Libre + Gemini AI Automático */}
-            <div className="wizard-integrations-card">
-              <div className="wizard-ai-banner">
-                <div className="wizard-ai-icon-pulse">🤖</div>
-                <div className="wizard-ai-text">
-                  <div className="wizard-ai-badge">Google Gemini AI Activo</div>
-                  <div className="wizard-ai-heading">Explicaciones generadas por defecto</div>
-                  <div className="wizard-ai-caption">
-                    Cada equipo incluirá una justificación técnica inteligente explicando por qué es la mejor opción para tu uso.
-                  </div>
-                </div>
+            {/* Presupuesto */}
+            <div className="wizard-presupuesto-section" style={{ marginTop: '18px' }}>
+              <div className="wizard-presupuesto-label">
+                💰 Presupuesto máximo en Dólares (USD)
               </div>
-
-              <div className="wizard-ml-banner">
-                <div className="ml-logo-pill">
-                  <span className="ml-badge-circle">🟡</span>
-                  <strong>Mercado Libre Perú (MPE)</strong>
-                </div>
-                <span className="ml-banner-desc">Catálogo, precios en soles y enlaces directos de compra sincronizados.</span>
+              <div className="price-input-wrap" style={{ marginBottom: '12px' }}>
+                <span className="price-prefix">$</span>
+                <input
+                  id="presupuesto-input"
+                  type="number"
+                  min="100"
+                  step="100"
+                  className="price-input"
+                  placeholder="Ej: 3500"
+                  value={presupuesto}
+                  onChange={(e) => setPresupuesto(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="price-chips">
+                {PRESUPUESTOS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    className={`price-chip ${Number(presupuesto) === p.value ? 'active' : ''}`}
+                    onClick={() => setPresupuesto(p.value)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -217,9 +247,11 @@ export default function WizardModal({ onClose, onSubmit, loading, initialStep = 
             disabled={!canNext() || loading}
           >
             {loading ? (
-              <><div className="spinner" /> Consultando Mercado Libre e IA...</>
+              <><div className="spinner" /> Buscando en Google Shopping...</>
             ) : step === TOTAL_STEPS - 1 ? (
-              <>🚀 Buscar en Mercado Libre</>
+              accion === 'comparar'
+                ? <>⚖️ Ver Comparación</>
+                : <>🚀 Buscar Equipos en Perú</>
             ) : (
               <>Siguiente →</>
             )}

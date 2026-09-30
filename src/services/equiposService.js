@@ -27,11 +27,29 @@ export const getHistorialPrecios = (id) =>
 /**
  * Solicita recomendaciones al motor ML.
  * @param {Object} params
- * @param {number} params.presupuesto - Presupuesto máximo en COP
+ * @param {number} params.presupuesto - Presupuesto máximo en Soles
  * @param {string} params.tipo_uso - 'gaming'|'diseño'|'oficina'|'estudiante'|'programacion'|'multimedia'
  * @param {string} params.tipo_equipo - 'laptop'|'pc_escritorio'|'ambos'
- * @param {Object} params.ubicacion - { ciudad, departamento }
  * @param {boolean} params.con_explicacion - Si incluir explicaciones de Gemini
+ * @param {string} params.accion - 'buscar'|'comparar'|'bot'
  */
 export const getRecomendaciones = (params) =>
   api.post('/recomendar/', params).then((r) => r.data)
+
+/**
+ * Obtiene el catálogo completo de laptops (sin filtro de presupuesto).
+ * @param {Object} params - { tipo_uso, tipo_equipo }
+ */
+export const getCatalogo = (params) =>
+  api.post('/catalogo/', params).then((r) => r.data)
+
+/**
+ * Envía un mensaje al chat de Gemini AI con contexto de equipos.
+ * @param {Object} params
+ * @param {string} params.mensaje - Mensaje del usuario
+ * @param {string} params.tipo_uso - Perfil de uso
+ * @param {string} params.tipo_equipo - Tipo de equipo
+ * @param {Array}  params.equipos - Lista de equipos para contexto
+ */
+export const chatConGemini = (params) =>
+  api.post('/chat/', params).then((r) => r.data)

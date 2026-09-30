@@ -1,9 +1,10 @@
 import './index.css'
 import { useState, useEffect } from 'react'
-import { getRecomendaciones } from './services/equiposService'
+import { getRecomendaciones, getCatalogo } from './services/equiposService'
 import WizardModal from './components/WizardModal'
 import EquipoCard from './components/EquipoCard'
 import LaptopCarousel from './components/LaptopCarousel'
+import ComparadorModal from './components/ComparadorModal'
 
 // Letras animadas para el título
 function AnimatedTitle({ text }) {
@@ -31,9 +32,9 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 }))
 
 const STEPS_PREVIEW = [
-  { num: 1, icon: '🎯', title: 'Tipo de uso',     desc: 'Gaming, trabajo, desarrollo o estudio' },
-  { num: 2, icon: '🖥️', title: 'Tipo de equipo',  desc: 'Laptop portátil, PC de escritorio o ambos' },
-  { num: 3, icon: '💰', title: 'Tu presupuesto',   desc: 'Búsqueda en Mercado Libre y análisis con Gemini AI' },
+  { num: 1, icon: '🎯', title: 'Tipo de uso',    desc: 'Gaming, trabajo, desarrollo o estudio' },
+  { num: 2, icon: '🖥️', title: 'Tipo de equipo', desc: 'Laptop portátil, PC de escritorio o ambos' },
+  { num: 3, icon: '🛒', title: 'Buscar & Comparar', desc: 'Precios reales y tiendas verificadas de Perú' },
 ]
 
 export default function App() {
@@ -43,8 +44,10 @@ export default function App() {
   const [error, setError]             = useState(null)
   const [activeStep, setActiveStep]   = useState(null)
   const [scrolled, setScrolled]       = useState(false)
+  const [modo, setModo]               = useState('ninguno') // 'buscar' | 'comparar' | 'ninguno'
+  const [showComparador, setShowComparador] = useState(false)
 
-  // Navbar transparente sobre el video, sólida al bajar
+  // Navbar transparente sobre el hero, sólida al bajar
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', handler, { passive: true })
@@ -64,17 +67,24 @@ export default function App() {
   }
 
   const handleSubmit = async (params) => {
+    const { accion, tipo_uso, tipo_equipo, presupuesto } = params
     setLoading(true)
     setError(null)
+
     try {
-      // Parámetros directos a la API con Mercado Libre y Gemini activado
       const data = await getRecomendaciones({
-        ...params,
-        con_explicacion: true,
+        presupuesto,
+        tipo_uso,
+        tipo_equipo,
       })
       setResultados(data)
+      setModo(accion === 'comparar' ? 'comparar' : 'buscar')
       setShowModal(false)
-      // Scroll suave a resultados
+
+      if (accion === 'comparar' && data.recomendaciones?.length > 0) {
+        setShowComparador(true)
+      }
+
       setTimeout(() => {
         document.getElementById('resultados')?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
@@ -82,7 +92,7 @@ export default function App() {
       setError(
         err?.response?.data?.errores
           ? Object.values(err.response.data.errores).join(' · ')
-          : 'No se pudo conectar con el backend de recomendaciones. Por favor verifica que el servidor esté activo.'
+          : 'No se pudo conectar con el servidor de equipos. Por favor verifica que el backend esté activo.'
       )
     } finally {
       setLoading(false)
@@ -96,17 +106,16 @@ export default function App() {
         <div className="container navbar-inner">
           <a href="/" className="navbar-brand">
             <img src="/assets/panda_logo.jpg" alt="LaptopAI Logo" className="navbar-logo" />
-            <div>
+            <div className="navbar-brand-text">
               <div>LaptopAI <span className="text-gradient">Recomendador</span></div>
-              <div className="navbar-tagline">Mercado Libre Perú · Google Gemini AI</div>
+              <div className="navbar-tagline">Google Shopping API · Tiendas Verificadas</div>
             </div>
           </a>
 
           <div className="navbar-actions">
-            {/* Badge de Mercado Libre Perú API */}
-            <div className="navbar-ml-status" title="Conectado a la API oficial de Mercado Libre Perú">
-              <span className="navbar-ml-dot" />
-              <span>🟡 Mercado Libre Perú (MPE)</span>
+            <div className="navbar-status-badge" title="Conectado a la API de Google Shopping vía SerpApi Perú">
+              <span className="navbar-dot-ping" />
+              <span>🛍️ Google Shopping (Perú)</span>
             </div>
 
             <button
@@ -114,22 +123,17 @@ export default function App() {
               className="btn btn-primary btn-sm"
               onClick={() => handleOpenModal(0)}
             >
-              ✨ Buscar en Mercado Libre
+              ✨ Buscar Equipos
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ══ HERO con VIDEO FULL-SCREEN ══════════════════════════════════ */}
+      {/* ══ HERO CON FONDO Y EFECTOS ══════════════════════════════════ */}
       <section className="hero">
-
-        {/* ── Fondo animado Ken Burns (simula video) ── */}
         <div className="hero-video hero-bg-kenburns" />
-
-        {/* ── Overlay oscuro degradado ── */}
         <div className="hero-video-overlay" />
 
-        {/* ── Partículas decorativas sobre el video ── */}
         <div className="hero-particles" style={{ zIndex: 2 }}>
           {PARTICLES.map((p, i) => (
             <div
@@ -140,22 +144,18 @@ export default function App() {
           ))}
         </div>
 
-        {/* ── Contenido centrado ── */}
         <div className="hero-content">
           <div className="container">
-
             <div className="hero-eyebrow">
-              🟡 API Mercado Libre Perú · scikit-learn · 🤖 Google Gemini AI
+              🇵🇪 Google Shopping API · SerpApi Perú · Tiendas Oficiales
             </div>
 
             <h1>
-              <AnimatedTitle text="Encuentra tu laptop en Mercado Libre con IA" />
+              <AnimatedTitle text="Encuentra tu laptop o PC ideal" />
             </h1>
 
             <p className="hero-subtitle">
-              Responde 3 preguntas rápidas y nuestro motor de IA busca en el catálogo de
-              <strong> Mercado Libre Perú</strong> los mejores equipos dentro de tu presupuesto en
-              <strong> Soles (S/.)</strong>, con explicaciones automáticas generadas por <strong>Gemini AI</strong>.
+              Busca y compara laptops y PCs de escritorio en tiempo real desde diferentes tiendas con precios transparentes y reales con enlaces directos de compra.
             </p>
 
             <div className="hero-cta" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -171,29 +171,27 @@ export default function App() {
                   className="btn btn-ghost btn-lg"
                   onClick={() => document.getElementById('resultados')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  Ver recomendaciones ↓
+                  Ver resultados ↓
                 </button>
               )}
             </div>
 
-            {/* Indicador de scroll */}
-            <div style={{ marginTop: '40px', animation: 'bounce 2s ease infinite', color: 'rgba(255,255,255,0.4)', fontSize: '1.4rem' }}>
+            <div style={{ marginTop: '36px', animation: 'bounce 2s ease infinite', color: 'rgba(255,255,255,0.4)', fontSize: '1.4rem' }}>
               ↓
             </div>
           </div>
         </div>
-
       </section>
 
-      {/* ══ CARRUSEL ══════════════════════════════════ */}
+      {/* ══ CARRUSEL DE LAPTOS ════════════════════════ */}
       <LaptopCarousel />
 
-      {/* ══ PASOS (preview) ═══════════════════════════ */}
+      {/* ══ PASOS DE BÚSQUEDA ═════════════════════════ */}
       <section className="steps-section">
         <div className="container">
           <div className="steps-header">
             <h2>¿Cómo funciona? <span className="text-gradient">3 pasos simples</span></h2>
-            <p>Búsqueda inteligente directa en Mercado Libre con explicación personalizada de Gemini AI</p>
+            <p>Búsqueda directa en tiendas de Perú a través de Google Shopping API</p>
           </div>
 
           <div className="steps-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
@@ -215,26 +213,28 @@ export default function App() {
         </div>
       </section>
 
-      {/* ══ RESULTADOS ════════════════════════════════ */}
+      {/* ══ RESULTADOS DE BÚSQUEDA ════════════════════ */}
       {resultados && (
         <section className="results-section" id="resultados">
           <div className="container">
             <div className="results-header">
               <h2>
-                🎯 Recomendaciones en <span className="text-gradient">Mercado Libre Perú</span>
+                {modo === 'comparar'
+                  ? <>⚖️ Comparativa de <span className="text-gradient">Precios y Tiendas en Perú</span></>
+                  : <>🎯 Catálogo de <span className="text-gradient">Google Shopping Perú</span></>
+                }
               </h2>
               <p>
                 {resultados.total > 0
-                  ? `${resultados.total} equipo${resultados.total !== 1 ? 's' : ''} encontrado${resultados.total !== 1 ? 's' : ''} · Presupuesto S/. ${Number(resultados.presupuesto).toLocaleString('es-PE')}`
+                  ? `${resultados.total} equipo${resultados.total !== 1 ? 's' : ''} encontrado${resultados.total !== 1 ? 's' : ''}${resultados.presupuesto ? ` · Presupuesto $${Number(resultados.presupuesto).toLocaleString('en-US')} USD` : ''}`
                   : 'Sin resultados — intenta ampliar el presupuesto o cambiar el tipo de equipo'}
               </p>
 
-              {/* Tag descriptivo de integración */}
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-                <div className="results-ml-banner">
-                  <span className="ml-dot-ping" />
+                <div className="results-banner">
+                  <span className="dot-ping" />
                   <span>
-                    🟡 Catálogo sincronizado con <strong>Mercado Libre Perú</strong> · Explicaciones con <strong>Google Gemini AI</strong> incluidas
+                    🛍️ Datos en vivo de <strong>Google Shopping Perú</strong> · Enlaces reales a la tienda de compra
                   </span>
                 </div>
               </div>
@@ -247,9 +247,20 @@ export default function App() {
                 >
                   ✨ Nueva búsqueda
                 </button>
+
+                {resultados.recomendaciones?.length > 1 && (
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => setShowComparador(true)}
+                    title="Comparar resultados lado a lado"
+                  >
+                    ⚖️ Comparar equipos
+                  </button>
+                )}
+
                 <button
                   className="btn btn-ghost"
-                  onClick={() => { setResultados(null); setError(null) }}
+                  onClick={() => { setResultados(null); setError(null); setModo('ninguno') }}
                 >
                   🗑️ Limpiar
                 </button>
@@ -264,7 +275,7 @@ export default function App() {
               <div className="empty-state">
                 <div className="empty-icon">🔍</div>
                 <h3>Sin resultados</h3>
-                <p>No encontramos equipos en Mercado Libre con ese presupuesto exacto. Prueba aumentando el rango o seleccionando "Ambos".</p>
+                <p>No encontramos equipos dentro de ese rango exacto. Intenta ajustar el presupuesto.</p>
                 <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => handleOpenModal(0)}>
                   Intentar de nuevo
                 </button>
@@ -290,7 +301,7 @@ export default function App() {
             </span>
           </div>
           <p>
-            Catálogo y precios en <strong>Soles (S/.)</strong> vía <strong>Mercado Libre Perú (MPE)</strong> · Motor ML scikit-learn · Explicaciones generadas por <strong>Google Gemini AI</strong>
+            Catálogo y precios en <strong>Soles (S/.)</strong> obtenidos en tiempo real vía <strong>Google Shopping API (SerpApi Perú)</strong>
           </p>
           <p style={{ marginTop: '4px', fontSize: '0.75rem' }}>
             API Backend: <a href="http://localhost:8000/api/" target="_blank" rel="noopener noreferrer">localhost:8000/api/</a>
@@ -305,6 +316,14 @@ export default function App() {
           onSubmit={handleSubmit}
           loading={loading}
           initialStep={activeStep ?? 0}
+        />
+      )}
+
+      {/* ══ COMPARADOR MODAL ══════════════════════════ */}
+      {showComparador && resultados?.recomendaciones?.length > 0 && (
+        <ComparadorModal
+          equipos={resultados.recomendaciones}
+          onClose={() => setShowComparador(false)}
         />
       )}
     </>

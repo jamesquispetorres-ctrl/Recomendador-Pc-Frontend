@@ -1,169 +1,116 @@
-import StarRating from './StarRating'
+import React from 'react'
 
 export default function EquipoCard({ equipo, index }) {
   const formatPrecio = (precio) =>
-    `S/. ${Number(precio).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    `$${Number(precio).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-  // Porcentaje de beneficio calculado por el motor (0-100%)
-  const beneficio =
-    equipo.porcentaje_beneficio ||
-    Math.min(98, Math.max(65, Math.round((equipo.score_afinidad || 0.5) * 100)))
+  const enlaceReal = equipo.enlace_compra && equipo.enlace_compra.startsWith('http')
+    ? equipo.enlace_compra
+    : `https://www.google.com/search?q=${encodeURIComponent((equipo.marca || '') + ' ' + (equipo.modelo || ''))}`
 
-  const etiqueta =
-    equipo.etiqueta_beneficio ||
-    (beneficio >= 90
-      ? 'Excelente opción · Máximo beneficio'
-      : beneficio >= 80
-      ? 'Muy beneficioso · Gran balance'
-      : 'Buena alternativa · Precio accesible')
-
-  const ahorro = equipo.ahorro ? Number(equipo.ahorro) : 0
-
-  // Construir enlace 100% funcional y activo a los listados en vivo de Mercado Libre Perú
-  const cleanMarca =
-    equipo.marca?.toLowerCase().includes(equipo.modelo?.toLowerCase()) ||
-    equipo.marca?.toLowerCase().includes('custom')
-      ? ''
-      : equipo.marca
-
-  const slug = `${cleanMarca} ${equipo.modelo}`
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-
-  const enlaceML =
-    equipo.enlace_compra && equipo.enlace_compra.startsWith('http')
-      ? equipo.enlace_compra
-      : `https://listado.mercadolibre.com.pe/${slug}`
-
-
+  const nombreProducto = equipo.modelo?.toLowerCase().startsWith((equipo.marca || '').toLowerCase())
+    ? equipo.modelo
+    : `${equipo.marca || ''} ${equipo.modelo || ''}`.trim()
 
   return (
     <div
-      className="equipo-card"
-      style={{ '--delay': `${index * 0.07}s` }}
+      className="equipo-card fade-up"
+      style={{ '--delay': `${index * 0.05}s` }}
     >
-      {/* Barra superior con gradiente de Mercado Libre y Tech */}
-      <div className="equipo-card-img" />
+      {/* ── IMAGEN / THUMBNAIL ── */}
+      <div className="equipo-card-image-wrap">
+        {equipo.imagen_url ? (
+          <img
+            src={equipo.imagen_url}
+            alt={nombreProducto}
+            className="equipo-card-img-src"
+            loading="lazy"
+            onError={(e) => {
+              e.target.onerror = null
+              e.target.style.display = 'none'
+              e.target.parentElement.classList.add('img-fallback')
+            }}
+          />
+        ) : (
+          <div className="equipo-card-img-fallback">
+            {equipo.tipo === 'laptop' ? '💻' : '🖥️'}
+          </div>
+        )}
+        <span className="equipo-tipo-badge-floating">
+          {equipo.tipo === 'laptop' ? '💻 Laptop' : '🖥️ PC Escritorio'}
+        </span>
+      </div>
 
       <div className="equipo-card-body">
-        {/* Cabecera: Marca, Badge de Mercado Libre y Tipo */}
+        {/* ── CABECERA: TIENDA Y UBICACIÓN ── */}
         <div className="equipo-header">
-          <div className="equipo-brand-wrap">
-            <span className="equipo-brand">{equipo.marca}</span>
-            <span className="badge-mercadolibre" title="Catálogo sincronizado con Mercado Libre Perú">
-              <span className="badge-ml-icon">🟡</span> Mercado Libre Perú
-            </span>
+          <div className="badge-tienda" title={`Vendido por ${equipo.tienda}`}>
+            <span className="store-icon">🏬</span>
+            <span className="store-name">{equipo.tienda || 'Google Shopping'}</span>
           </div>
-
-          <span className="equipo-tipo-badge">
-            {equipo.tipo === 'laptop' ? '💻 Laptop' : '🖥️ PC'}
-          </span>
+          <span className="equipo-location">📍 {equipo.ciudad || 'Perú'}</span>
         </div>
 
-        <h3 className="equipo-nombre">{equipo.marca} {equipo.modelo}</h3>
+        {/* ── TÍTULO / NOMBRE DEL PRODUCTO ── */}
+        <h3 className="equipo-nombre" title={nombreProducto}>
+          {nombreProducto}
+        </h3>
 
-        {/* ── BARRA DE BENEFICIO PARA TI ── */}
-        <div className="benefit-container">
-          <div className="benefit-header">
-            <div className="benefit-title-wrap">
-              <span className="benefit-icon">📈</span>
-              <span className="benefit-title">Beneficio para ti</span>
-            </div>
-            <span className="benefit-val">{beneficio}%</span>
-          </div>
-
-          <div className="benefit-track" title={`Nivel de beneficio estimado: ${beneficio}%`}>
-            <div
-              className="benefit-fill"
-              style={{ width: `${beneficio}%` }}
-            />
-          </div>
-
-          <div className="benefit-footer">
-            <span className="benefit-tag-status">
-              ✨ {etiqueta}
-            </span>
-            {ahorro > 0 && (
-              <span className="benefit-savings-pill">
-                💰 Ahorras S/. {ahorro.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Especificaciones técnicas */}
+        {/* ── ESPECIFICACIONES TÉCNICAS ── */}
         <div className="specs-grid">
-          <div className="spec">
+          <div className="spec-pill" title="Procesador">
             <span className="spec-icon">⚡</span>
-            <span>{equipo.procesador?.split(' ').slice(0, 4).join(' ') || 'N/D'}</span>
+            <span>{equipo.procesador?.split(' ').slice(0, 4).join(' ') || 'Intel / AMD'}</span>
           </div>
-          <div className="spec">
+          <div className="spec-pill" title="Memoria RAM">
             <span className="spec-icon">🧠</span>
             <span>{equipo.memoria_ram} GB RAM</span>
           </div>
-          <div className="spec">
+          <div className="spec-pill" title="Almacenamiento">
             <span className="spec-icon">💾</span>
             <span>{equipo.almacenamiento}</span>
           </div>
-          <div className="spec">
+          <div className="spec-pill" title="Tarjeta Gráfica">
             <span className="spec-icon">🎮</span>
             <span>{equipo.tarjeta_grafica || 'Integrada'}</span>
           </div>
           {equipo.tamanio_pantalla && (
-            <div className="spec">
+            <div className="spec-pill" title="Pantalla">
               <span className="spec-icon">🖥️</span>
               <span>{equipo.tamanio_pantalla}"</span>
             </div>
           )}
-          <div className="spec">
-            <span className="spec-icon">📦</span>
-            <span>Envío a todo el Perú</span>
-          </div>
         </div>
 
-        {/* Precio en Soles */}
-        <div className="precio-container">
-          <div className="equipo-precio">{formatPrecio(equipo.precio)}</div>
-          <div className="precio-sub">Precio verificado en Soles (S/.)</div>
-        </div>
-
-        {/* Tarjeta de Explicación de Gemini AI */}
+        {/* ── DESCRIPCIÓN IA (Gemini) ── */}
         {equipo.explicacion && (
-          <div className="gemini-ia-card">
-            <div className="gemini-ia-header">
-              <div className="gemini-ia-badge">
-                <span className="gemini-pulse-icon">🤖</span>
-                <span>Análisis Google Gemini AI</span>
-              </div>
-              <span className="gemini-tag">Verificado</span>
+          <div className="gemini-desc-card">
+            <div className="gemini-desc-header">
+              <span className="gemini-desc-icon">✨</span>
+              <span className="gemini-desc-label">Análisis IA</span>
             </div>
-            <p className="gemini-ia-text">"{equipo.explicacion}"</p>
+            <p className="gemini-desc-text">{equipo.explicacion}</p>
           </div>
         )}
 
-        {/* Footer con botón directo a Mercado Libre */}
-        <div className="equipo-footer">
+        {/* ── PRECIO Y BOTÓN VER EN TIENDA ── */}
+        <div className="equipo-card-footer">
+          <div className="precio-wrap">
+            <span className="precio-label">Precio USD</span>
+            <div className="equipo-precio">{formatPrecio(equipo.precio)}</div>
+          </div>
+
           <a
-            href={enlaceML}
+            href={enlaceReal}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-mercadolibre"
-            id={`btn-comprar-ml-${equipo.id || index}`}
-            title="Abrir publicaciones activas en Mercado Libre Perú"
+            className="btn-ver-tienda"
+            id={`btn-tienda-${equipo.id || index}`}
+            title={`Abrir ${nombreProducto} en ${equipo.tienda || 'la tienda'}`}
           >
-            <span className="ml-cart-icon">🛒</span>
-            <span>Comprar en Mercado Libre</span>
-            <span className="ml-arrow">→</span>
+            <span>Ver en tienda</span>
+            <span className="btn-arrow">↗</span>
           </a>
-
-          <div className="equipo-card-subfooter">
-            <div className="seller-trust">
-              🛡️ Compra protegida con garantía Mercado Libre
-            </div>
-            <StarRating equipoId={equipo.id} equipoNombre={`${equipo.marca} ${equipo.modelo}`} />
-          </div>
         </div>
       </div>
     </div>
